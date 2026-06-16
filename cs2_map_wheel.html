@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEAM STAVR — выбор карты CS2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117;
+    --panel:#151b24;
+    --line:#283341;
+    --gold:#f0a500;
+    --gold-soft:#ffc94d;
+    --text:#e6edf3;
+    --muted:#8a96a3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(900px 600px at 50% -10%, #1a2533 0%, transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Rajdhani',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px 48px;
+    gap:18px;
+  }
+  header{text-align:center;}
+  header .secret{
+    color:var(--gold-soft);
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    font-size:clamp(11px,2.4vw,15px);
+    margin-bottom:6px;
+    opacity:.9;
+  }
+  header h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    letter-spacing:.16em;
+    font-size:clamp(44px,11vw,96px);
+    line-height:.95;
+    text-transform:uppercase;
+    background:linear-gradient(180deg,#fff 0%,var(--gold-soft) 120%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 6px 30px rgba(240,165,0,.25);
+  }
+  .stage{
+    position:relative;
+    width:min(86vw,540px);
+    aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  canvas{
+    width:100%;height:100%;
+    cursor:pointer;
+    filter:drop-shadow(0 20px 40px rgba(0,0,0,.55));
+  }
+  /* pointer on the right side */
+  .pointer{
+    position:absolute;
+    right:-6px;top:50%;
+    transform:translateY(-50%);
+    width:0;height:0;
+    border-top:20px solid transparent;
+    border-bottom:20px solid transparent;
+    border-right:34px solid var(--gold);
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));
+    z-index:5;pointer-events:none;
+  }
+  .result{
+    min-height:64px;
+    text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .result .lbl{color:var(--muted);letter-spacing:.22em;text-transform:uppercase;font-size:12px;}
+  .result .map{
+    font-family:'Oswald',sans-serif;font-weight:700;
+    font-size:clamp(28px,7vw,46px);text-transform:uppercase;letter-spacing:.06em;
+    line-height:1;
+  }
+  .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  button{
+    font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    font-size:15px;color:#13181f;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    border:none;border-radius:8px;padding:13px 30px;cursor:pointer;
+    box-shadow:0 6px 0 #b87b00, 0 8px 18px rgba(0,0,0,.4);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  button:hover{filter:brightness(1.06);}
+  button:active{transform:translateY(4px);box-shadow:0 2px 0 #b87b00,0 4px 10px rgba(0,0,0,.4);}
+  button:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;transform:none;}
+  .hint{color:var(--muted);font-size:13px;letter-spacing:.06em;}
+  .legend{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:8px 18px;max-width:560px;width:100%;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  }
+  .legend .row{display:flex;align-items:center;gap:9px;font-size:15px;letter-spacing:.03em;}
+  .legend .dot{width:14px;height:14px;border-radius:3px;flex:0 0 auto;}
+  .legend .pct{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .legend .row.big{grid-column:1/-1;font-weight:700;}
+
+  .nick{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
+    width:100%;max-width:560px;
+  }
+  .nick input{
+    flex:1 1 220px;min-width:0;
+    font-family:'Rajdhani',sans-serif;font-weight:600;font-size:17px;letter-spacing:.04em;
+    color:var(--text);background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;padding:12px 14px;outline:none;
+  }
+  .nick input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,165,0,.15);}
+  .nick input::placeholder{color:var(--muted);}
+
+  .layout{
+    display:flex;gap:24px;align-items:flex-start;justify-content:center;
+    width:100%;max-width:1120px;flex-wrap:wrap;
+  }
+  .main{
+    display:flex;flex-direction:column;align-items:center;gap:18px;
+    flex:1 1 480px;min-width:300px;max-width:600px;
+  }
+
+  .history{
+    flex:1 1 320px;min-width:280px;max-width:400px;align-self:stretch;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+  }
+  .history .head{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+  }
+  .history .head h2{
+    font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    font-size:15px;color:var(--gold-soft);
+  }
+  .history ul{list-style:none;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto;}
+  .history li{
+    display:flex;align-items:center;gap:10px;font-size:15px;
+    padding:8px 10px;background:#0f141b;border-radius:7px;
+  }
+  .history li .dot{width:11px;height:11px;border-radius:3px;flex:0 0 auto;}
+  .history li .who{font-weight:700;color:var(--text);}
+  .history li .map{font-weight:700;}
+  .history li .time{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;}
+  .history .empty{color:var(--muted);font-size:14px;text-align:center;padding:8px 0;}
+
+  @media (prefers-reduced-motion:reduce){button:active{transform:none;}}
+</style>
+</head>
+<body>
+  <header>
+    <p class="secret">Секретная страница выбора карты для КС2</p>
+    <h1>TEAM STAVR</h1>
+  </header>
+
+  <div class="layout">
+   <div class="main">
+    <div class="nick">
+      <input id="nick" type="text" maxlength="24" placeholder="Твой ник (обязательно)" autocomplete="off">
+    </div>
+
+    <div class="stage">
+      <canvas id="wheel" width="1080" height="1080"></canvas>
+      <div class="pointer"></div>
+    </div>
+
+    <div class="result" id="result">
+      <span class="lbl">Введи ник и крути</span>
+      <span class="map" style="color:var(--muted)">—</span>
+    </div>
+
+    <div class="controls">
+      <button id="spinBtn">Крутить</button>
+    </div>
+    <div class="hint">Клик по колесу · клавиша Enter / Пробел</div>
+
+    <div class="legend" id="legend"></div>
+   </div>
+
+   <aside class="history">
+     <div class="head">
+       <h2>История прокрутов</h2>
+     </div>
+     <ul id="historyList"></ul>
+   </aside>
+  </div>
+
+<script>
+const TAU = Math.PI * 2;
+
+// Веса в 100-х: Ancient 64%, Anubis 30%, остальные шесть по 1%. Сумма = 100.
+const maps = [
+  { name:"Ancient",  color:"#1f8a63", weight:64 }, // 64%
+  { name:"Anubis",   color:"#4a9aa6", weight:30 }, // 30%
+  { name:"Inferno",  color:"#b8392f", weight:1 },  // 1%
+  { name:"Dust2",    color:"#d6a83b", weight:1 },
+  { name:"Nuke",     color:"#3b6ea5", weight:1 },
+  { name:"Overpass", color:"#6e8b3d", weight:1 },
+  { name:"Mirage",   color:"#c4612f", weight:1 },
+  { name:"Cache",    color:"#7d6f8a", weight:1 },
+];
+const totalWeight = maps.reduce((s,m)=>s+m.weight,0);
+
+// границы секторов (в радианах, 0 = 3 часа, по часовой стрелке)
+let acc = 0;
+const segments = maps.map(m=>{
+  const span = (m.weight/totalWeight)*TAU;
+  const seg = { ...m, start: acc, end: acc+span };
+  acc += span;
+  return seg;
+});
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const dpr = Math.min(window.devicePixelRatio||1, 2);
+const SIZE = 1080;
+canvas.width = SIZE*dpr; canvas.height = SIZE*dpr;
+ctx.scale(dpr,dpr);
+const cx = SIZE/2, cy = SIZE/2, R = SIZE/2 - 14;
+
+let rotation = -Math.PI/2; // стартовый поворот, чисто для вида
+let spinning = false;
+
+function readable(bg){
+  // выбор тёмного/светлого текста по яркости фона
+  const c = bg.replace("#",""); 
+  const r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);
+  return (0.299*r+0.587*g+0.114*b) > 150 ? "#1a1a1a" : "#ffffff";
+}
+
+function draw(){
+  ctx.clearRect(0,0,SIZE,SIZE);
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(rotation);
+
+  segments.forEach(seg=>{
+    // сектор
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,R,seg.start,seg.end);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(0,0,0,.25)";
+    ctx.stroke();
+
+    // подпись
+    const mid = (seg.start+seg.end)/2;
+    const span = seg.end - seg.start;
+    ctx.save();
+    ctx.rotate(mid);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    const fontSize = Math.max(26, Math.min(74, span*70));
+    const wght = span > 1 ? "700 " : "600 ";
+    ctx.fillStyle = readable(seg.color);
+    ctx.font = wght + fontSize + "px Oswald, sans-serif";
+    // у больших секторов текст можно отрисовать прямо; флип для нижней половины ради читаемости
+    let flip = (mid % TAU);
+    if (flip < 0) flip += TAU;
+    if (flip > Math.PI/2 && flip < Math.PI*1.5){
+      ctx.rotate(Math.PI);
+      ctx.textAlign = "left";
+      ctx.fillText(seg.name.toUpperCase(), -R+44, 0);
+    } else {
+      ctx.fillText(seg.name.toUpperCase(), R-44, 0);
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+
+  // обод
+  ctx.beginPath();
+  ctx.arc(cx,cy,R,0,TAU);
+  ctx.lineWidth = 10; ctx.strokeStyle = "#0a0e13"; ctx.stroke();
+  ctx.lineWidth = 4;  ctx.strokeStyle = "rgba(240,165,0,.55)"; ctx.stroke();
+
+  // ступица
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*0.17,0,TAU);
+  ctx.fillStyle = "#0d1117"; ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = "#f0a500"; ctx.stroke();
+  ctx.fillStyle = "#f0a500";
+  ctx.font = "700 56px Oswald, sans-serif";
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("CS2", cx, cy+2);
+}
+
+// какой сектор под указателем (указатель справа = угол 0)
+function segmentAtPointer(){
+  let a = (-rotation) % TAU;
+  if (a < 0) a += TAU;
+  return segments.find(s => a >= s.start && a < s.end) || segments[0];
+}
+
+// лёгкий "тик" на границах секторов
+let audioCtx=null;
+function tick(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.frequency.value=1200; o.type="square";
+    g.gain.setValueAtTime(0.04,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.05);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+0.05);
+  }catch(e){}
+}
+
+const resultEl = document.getElementById("result");
+const btn = document.getElementById("spinBtn");
+
+function spin(){
+  if (spinning) return;
+  if (!nickInput.value.trim()){
+    resultEl.querySelector(".lbl").textContent = "Сначала введи ник!";
+    nickInput.focus();
+    return;
+  }
+  spinning = true; btn.disabled = true;
+  resultEl.querySelector(".lbl").textContent = "Крутим...";
+  resultEl.querySelector(".map").textContent = "—";
+  resultEl.querySelector(".map").style.color = "var(--muted)";
+
+  const start = rotation;
+  const spins = 5 + Math.floor(Math.random()*4);
+  let extra;
+
+  const vip = ["stavr","st4vr"].includes(nickInput.value.trim().toLowerCase());
+  if (vip){
+    // гарантированно останавливаемся на секторе Ancient
+    const a = segments[0]; // Ancient
+    const span = a.end - a.start;
+    const desired = a.start + span*(0.15 + Math.random()*0.7);
+    const wantMod = (((-desired) % TAU) + TAU) % TAU;
+    const base = start + spins*TAU;
+    const baseMod = ((base % TAU) + TAU) % TAU;
+    const add = (((wantMod - baseMod) % TAU) + TAU) % TAU;
+    extra = spins*TAU + add;
+  } else {
+    // равномерный случайный угол -> вероятность = доле площади сектора
+    extra = spins*TAU + Math.random()*TAU;
+  }
+
+  const dur = 4200 + Math.random()*900;
+  const t0 = performance.now();
+  let lastSeg = segmentAtPointer().name;
+
+  const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  function frame(now){
+    let p = Math.min((now - t0)/dur, 1);
+    if (reduce) p = 1;
+    const eased = 1 - Math.pow(1-p, 3); // ease-out cubic
+    rotation = start + extra*eased;
+    draw();
+
+    const cur = segmentAtPointer().name;
+    if (cur !== lastSeg){ lastSeg = cur; tick(); }
+
+    if (p < 1){ requestAnimationFrame(frame); }
+    else { finish(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function finish(){
+  spinning = false; btn.disabled = false;
+  const seg = segmentAtPointer();
+  resultEl.querySelector(".lbl").textContent = "Выпало";
+  const m = resultEl.querySelector(".map");
+  m.textContent = seg.name;
+  m.style.color = seg.color;
+  addHistory(seg);
+}
+
+// ----- ник и история (localStorage) -----
+const NICK_KEY = "stavr_nick";
+const HIST_KEY = "stavr_history";
+const nickInput = document.getElementById("nick");
+const historyList = document.getElementById("historyList");
+
+function loadNick(){
+  try{ nickInput.value = localStorage.getItem(NICK_KEY) || ""; }catch(e){}
+}
+nickInput.addEventListener("input", ()=>{
+  try{ localStorage.setItem(NICK_KEY, nickInput.value.trim()); }catch(e){}
+});
+
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); }catch(e){ return []; }
+}
+function saveHistory(arr){
+  try{ localStorage.setItem(HIST_KEY, JSON.stringify(arr.slice(0,100))); }catch(e){}
+}
+function colorOf(name){
+  const m = maps.find(x=>x.name===name);
+  return m ? m.color : "#888";
+}
+function fmtTime(ts){
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2,"0");
+  return `${p(d.getDate())}.${p(d.getMonth()+1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderHistory(){
+  const arr = loadHistory();
+  if (!arr.length){
+    historyList.innerHTML = `<li class="empty">Пока пусто — крути колесо</li>`;
+    return;
+  }
+  historyList.innerHTML = arr.map(e=>`
+    <li>
+      <span class="dot" style="background:${colorOf(e.map)}"></span>
+      <span class="who">${escapeHtml(e.nick)}</span>
+      <span class="map" style="color:${colorOf(e.map)}">${escapeHtml(e.map)}</span>
+      <span class="time">${fmtTime(e.ts)}</span>
+    </li>`).join("");
+}
+function addHistory(seg){
+  const nick = (nickInput.value.trim() || "Аноним");
+  const arr = loadHistory();
+  arr.unshift({ nick, map: seg.name, ts: Date.now() });
+  saveHistory(arr);
+  renderHistory();
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+loadNick();
+renderHistory();
+
+// легенда
+const legend = document.getElementById("legend");
+legend.innerHTML = segments.map(s=>{
+  const pct = Math.round((s.weight/totalWeight)*1000)/10;
+  const big = (s.name==="Ancient"||s.name==="Anubis") ? " big" : "";
+  return `<div class="row${big}"><span class="dot" style="background:${s.color}"></span>${s.name}<span class="pct">${pct}%</span></div>`;
+}).join("");
+
+draw();
+
+canvas.addEventListener("click", spin);
+btn.addEventListener("click", spin);
+window.addEventListener("keydown", e=>{
+  if (document.activeElement === nickInput) return;
+  if (e.key==="Enter" || e.key===" "){ e.preventDefault(); spin(); }
+});
+</script>
+</body>
+</html>
